@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OAuth2 Connect All</title>
+</head>
+<body>
+  <h1>OAuth2 Connect All</h1>
+  <div id="status">Checking login status...</div>
+  <div id="buttons">
+    <button onclick="window.location.href='/api/discord/login'">Connect Discord</button>
+    <button onclick="window.location.href='/api/youtube/login'">Connect YouTube</button>
+    <button onclick="window.location.href='/api/twitter/login'">Connect Twitter</button>
+    <button onclick="startTelegramOAuth()">Connect Telegram</button>
+  </div>
+  <div id="disconnects" style="display:none">
+    <button onclick="disconnect('discord')">Disconnect Discord</button>
+    <button onclick="disconnect('youtube')">Disconnect YouTube</button>
+    <button onclick="disconnect('twitter')">Disconnect Twitter</button>
+    <button onclick="disconnect('telegram')">Disconnect Telegram</button>
+  </div>
+  <script>
+    async function checkLogin(service) {
+      try {
+        const res = await fetch(`/api/${service}/me`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        document.getElementById('status').innerHTML += `<br>${service}: Logged in as ${data.username || data.email}`;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    async function checkAll() {
+      const services = ['discord', 'youtube', 'twitter', 'telegram'];
+      const results = await Promise.all(services.map(checkLogin));
+      if (results.some(ok => ok)) {
+        document.getElementById('buttons').style.display = 'none';
+        document.getElementById('disconnects').style.display = 'block';
+      } else {
+        document.getElementById('status').textContent = 'Not logged in';
+      }
+    }
+
+    async function disconnect(service) {
+      await fetch(`/api/${service}/logout`);
+      window.location.reload();
+    }
+
+    function startTelegramOAuth() {
+      const botId = "8090102707";
+      const origin = encodeURIComponent(window.location.origin);
+      const url = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${origin}&embed=1&request_access=write`;
+      window.location.href = url;
+    }
+
+    checkAll();
+  </script>
+</body>
+</html>
