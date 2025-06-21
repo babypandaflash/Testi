@@ -1,45 +1,43 @@
-import { serialize } from 'cookie';
+import { serialize } from "cookie";
 
 export default async function handler(req, res) {
   const code = req.query.code;
-  const redirect_uri = "https://your-vercel-app.vercel.app/api/discord/callback";
-
-  const params = new URLSearchParams();
-  params.append("client_id", process.env.DISCORD_CLIENT_ID);
-  params.append("client_secret", process.env.DISCORD_CLIENT_SECRET);
-  params.append("grant_type", "authorization_code");
-  params.append("code", code);
-  params.append("redirect_uri", redirect_uri);
+  if (!code) return res.status(400).send("No code provided");
 
   const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
     method: "POST",
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      client_id: process.env.DISCORD_CLIENT_ID,
+      client_secret: process.env.DISCORD_CLIENT_SECRET,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: `${process.env.BASE_URL}/api/discord/callback`,
+    }),
   });
 
   const tokenData = await tokenRes.json();
+  const access_token = tokenData.access_token;
+
+  if (!access_token) return res.status(400).json({ error: "Failed to get token" });
 
   const userRes = await fetch("https://discord.com/api/users/@me", {
     headers: {
-      Authorization: `${tokenData.token_type} ${tokenData.access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
   });
+
   const user = await userRes.json();
 
-  const cookie = serialize("discord_token", tokenData.access_token, {
-    path: "/",
-    httpOnly: true,
-    secure: true,
-    maxAge: 60 * 60 * 24,
-  });
-
-  const userCookie = serialize("discord_user", user.username, {
+  const cookie = serialize("discord_user", user.username, {
     path: "/",
     httpOnly: false,
-    secure: true,
     maxAge: 60 * 60 * 24,
   });
 
-  res.setHeader("Set-Cookie", [cookie, userCookie]);
+  res.setHeader("Set-Cookie", cookie);
   res.redirect("/index.html");
 }
+
