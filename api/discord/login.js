@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const redirect_uri = encodeURIComponent("https://your-vercel-app.vercel.app/api/discord/callback");
+  const redirect_uri = encodeURIComponent("https://testi-theta.vercel.app/api/discord/callback");
   const client_id = process.env.DISCORD_CLIENT_ID;
   const scope = encodeURIComponent("identify");
 
