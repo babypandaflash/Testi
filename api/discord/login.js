@@ -1,7 +1,13 @@
-export default async function handler(req, res) {
-  const redirect_uri = encodeURIComponent("https://testi-theta.vercel.app/api/discord/callback");
-  const client_id = process.env.DISCORD_CLIENT_ID;
-  const scope = encodeURIComponent("identify");
+export default function handler(req, res) {
+  const base = "https://discord.com/api/oauth2/authorize";
 
-  return res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}`);
+  const params = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID,
+    redirect_uri: `${process.env.BASE_URL}/api/discord/callback`,
+    response_type: "code",
+    scope: "identify email", // Anda bisa tambahkan 'email' jika perlu
+  });
+
+  res.redirect(`${base}?${params.toString()}`);
 }
+
